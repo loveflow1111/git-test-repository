@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<!--
+    덕산·수산 로컬 스토리북 (Interactive Map)
+    © 2026 Kim Minju. All Rights Reserved.
+-->
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>덕산·수산 로컬 스토리북 v26</title>
+
+    <meta property="og:title" content="덕산·수산 로컬 스토리북">
+    <meta property="og:description" content="발로 누빈 덕산·수산의 53개 공간과 다정한 이야기 지도">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80">
+
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        html { font-size: 16px; transition: font-size 0.25s ease; }
+
+        :root {
+            --sage: #2D4030;          /* 깊은 산림 세이지 그린 */
+            --warm-cream: #F5F0EB;    /* 고급 에코 페이퍼 크림 */
+            --soft-gold: #C5A059;     /* 따뜻한 골드 호박빛 */
+            --charcoal: #2B2825;      /* 깊은 먹색 */
+            --clay-bg: #EAE3D5;       /* 클래식 캠퍼스 바탕 */
+            --terracotta: #B86B53;    /* 따뜻한 붉은 흙빛 */
+            --border-color: rgba(43, 40, 37, 0.15);
+            --card-bg: rgba(255, 255, 255, 0.92);
+        }
+
+        /* 👁️ 고대비 모드 */
+        body.high-contrast {
+            --warm-cream: #000000 !important;
+            --charcoal: #FFFFFF !important;
+            --clay-bg: #121212 !important;
+            --sage: #2EA043 !important;
+            --border-color: #FFFFFF !important;
+            --card-bg: #1A1A1A !important;
+            background: #000000 !important;
+            color: #FFFFFF !important;
+        }
+
+        body.high-contrast .cover-card,
+        body.high-contrast .page-guide,
+        body.high-contrast #sidebar-box,
+        body.high-contrast .swallow-panel {
+            background: #181818 !important;
+            border-color: #FFFFFF !important;
+            color: #FFFFFF !important;
+        }
+
+        body.high-contrast .cover-title,
+        body.high-contrast .cover-sub,
+        body.high-contrast h2,
+        body.high-contrast p {
+            color: #FFFFFF !important;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Pretendard', sans-serif; background: var(--warm-cream); color: var(--charcoal); scroll-behavior: smooth; overflow-x: hidden; transition: background 0.3s, color 0.3s; }
+
+        .leaflet-control-attribution { display: none !important; }
+
+        /* ♿ 베리어프리 상단 툴바 */
+        .accessibility-bar { position: fixed; top: 12px; right: 12px; z-index: 9999; display: flex; gap: 6px; background: rgba(43, 40, 37, 0.92); padding: 6px 12px; border-radius: 20px; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .a11y-btn { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #FFF; padding: 5px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .a11y-btn:hover { background: var(--soft-gold); color: #000; border-color: var(--soft-gold); }
+
+        /* PAGE 1: 프롤로그 커버 */
+        section.page-cover { 
+            width: 100%; min-height: 100vh; 
+            background: linear-gradient(180deg, rgba(30, 42, 32, 0.35) 0%, rgba(30, 42, 32, 0.65) 100%), 
+                        url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1800&q=80') center/cover no-repeat fixed; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 60px 20px; position: relative; border-bottom: 1px solid var(--border-color);
+        }
+
+        .cover-card { 
+            background: var(--card-bg); backdrop-filter: blur(16px); 
+            border: 1.5px solid var(--soft-gold); padding: 55px 45px; border-radius: 32px; 
+            max-width: 820px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); position: relative; z-index: 2; transition: background 0.3s;
+        }
+
+        .cover-title { font-family: 'Nanum Myeongjo', serif; font-size: 2.8rem; font-weight: 800; color: var(--charcoal); line-height: 1.35; margin-bottom: 22px; letter-spacing: -0.02em; }
+        .cover-sub { font-size: 1.05rem; color: var(--charcoal); opacity: 0.95; max-width: 640px; line-height: 1.85; margin: 0 auto 35px auto; }
+        .scroll-down { font-size: 0.95rem; animation: float 2.5s infinite ease-in-out; color: #FFF; text-decoration: none; font-weight: bold; background: var(--sage); padding: 14px 32px; border-radius: 30px; box-shadow: 0 4px 15px rgba(45,64,48,0.3); transition: all 0.3s; display: inline-block; }
+        .scroll-down:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(45,64,48,0.4); }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+        /* PAGE 2: 지도 범례 기호표 */
+        section.page-guide-wrapper { 
+            width: 100%; min-height: 100vh; display: flex; align-items: center; justify-content: center; 
+            background: linear-gradient(180deg, rgba(245, 240, 235, 0.82) 0%, rgba(245, 240, 235, 0.92) 100%),
+                        url('https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat fixed; 
+            border-bottom: 1px solid var(--border-color); padding: 60px 20px; position: relative; 
+        }
+        .page-guide { max-width: 980px; width: 100%; background: var(--card-bg); backdrop-filter: blur(12px); border-radius: 28px; padding: 50px 45px; border: 1px solid var(--soft-gold); box-shadow: 0 15px 40px rgba(0,0,0,0.12); position: relative; z-index: 2; }
+        .guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 32px; }
+        .guide-item { display: flex; align-items: center; gap: 16px; font-size: 0.95rem; color: var(--charcoal); padding: 18px 22px; border-radius: 20px; background: rgba(255,255,255,0.85); border: 1px solid var(--border-color); transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .guide-item:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 12px 25px rgba(45, 64, 48, 0.15); border-color: var(--soft-gold); }
+        .color-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; box-shadow: 0 2px 6px rgba(0,0,0,0.15); flex-shrink: 0; color: white; }
+        .dot-blue { background: #3B5A75; } .dot-orange { background: #D97A29; } .dot-purple { background: #6B428A; } .dot-green { background: #2D4030; }
+
+        /* PAGE 3: 메인 지도 섹션 & 프레임 */
+        .page-map-wrapper { 
+            width: 100%; min-height: 100vh; padding: 60px 25px; 
+            background: linear-gradient(180deg, rgba(234, 227, 213, 0.85) 0%, rgba(234, 227, 213, 0.92) 100%),
+                        url('https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat fixed;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        }
+        .map-section-header { text-align: center; margin-bottom: 28px; }
+        .map-section-header .tag { font-size: 0.8rem; font-weight: 700; color: var(--soft-gold); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px; }
+        .map-section-header h2 { font-family: 'Nanum Myeongjo', serif; font-size: 2.1rem; font-weight: 800; color: var(--charcoal); margin-bottom: 10px; }
+
+        .map-frame-container { width: 100%; max-width: 1280px; height: 78vh; min-height: 580px; background: var(--warm-cream); border-radius: 24px; border: 1.5px solid var(--soft-gold); box-shadow: 0 20px 50px rgba(0,0,0,0.18); display: flex; overflow: hidden; position: relative; }
+
+        #map { width: 70%; height: 100%; background: #E5E0D6; z-index: 1; }
+
+        /* 상단 컨트롤러 */
+        .map-top-bar { position: absolute; top: 18px; left: 18px; z-index: 1000; display: flex; gap: 8px; background: rgba(244, 239, 234, 0.94); padding: 7px 14px; border-radius: 30px; border: 1px solid var(--border-color); backdrop-filter: blur(8px); box-shadow: 0 4px 15px rgba(0,0,0,0.08); flex-wrap: wrap; align-items: center; max-width: calc(100% - 100px); }
+        .filter-btn { border: none; background: transparent; padding: 6px 12px; font-size: 0.8rem; font-weight: 600; color: var(--charcoal); border-radius: 18px; cursor: pointer; transition: all 0.25s; }
+        .filter-btn.active { background: var(--charcoal); color: #FFF; }
+
+        .course-btn { border: 1px solid var(--border-color); background: #FFF; padding: 6px 12px; font-size: 0.75rem; font-weight: 700; color: var(--sage); border-radius: 18px; cursor: pointer; transition: all 0.25s; }
+        .course-btn.active { background: var(--sage); color: #FFF; border-color: var(--sage); }
+
+        /* 🐦 복원된 제비 길잡이 컨트롤 패널 */
+        .swallow-panel { position: absolute; bottom: 20px; left: 20px; z-index: 1000; display: flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.95); padding: 10px 18px; border-radius: 30px; border: 1.5px solid var(--soft-gold); box-shadow: 0 8px 25px rgba(0,0,0,0.12); backdrop-filter: blur(8px); }
+        .swallow-avatar { width: 38px; height: 38px; border-radius: 50%; background: #EBF2EE; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1px solid var(--sage); }
+
+        .nav-location-btn { background: var(--warm-cream); color: var(--charcoal); border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 14px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .nav-location-btn:hover { background: var(--sage); color: #FFF; border-color: var(--sage); }
+
+        .swallow-marker { transition: all 1.2s cubic-bezier(0.25, 1, 0.5, 1); filter: drop-shadow(0 6px 12px rgba(0,0,0,0.3)); }
+        .swallow-svg { width: 44px; height: 44px; animation: flyGlide 1.2s infinite ease-in-out alternate; }
+        @keyframes flyGlide { 0% { transform: translateY(0) rotate(-4deg); } 100% { transform: translateY(-6px) rotate(4deg); } }
+
+        /* 오른쪽 정보 패널 */
+        #sidebar-box { width: 30%; height: 100%; background: var(--warm-cream); padding: 30px 24px; overflow-y: auto; border-left: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 100; }
+        .placeholder { margin: auto; text-align: center; color: #9E978C; font-style: italic; line-height: 1.9; font-size: 0.9rem; }
+
+        .category-badge { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 14px; margin-bottom: 14px; text-transform: uppercase; }
+        .cat-맛 { background: #F0E8F5; color: #6A3A8A; } .cat-결 { background: #E8F0F8; color: #3A5A7A; }
+        .cat-흥 { background: #FDF3E5; color: #8A6020; } .cat-쉼 { background: #EAF2EA; color: #2D4030; }
+
+        h2.place-title { font-family: 'Nanum Myeongjo', serif; font-size: 1.65rem; font-weight: 800; margin-bottom: 14px; color: var(--charcoal); line-height: 1.3; }
+        .badge-container { margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .badge { font-size: 0.7rem; font-weight: 600; padding: 4px 9px; border-radius: 12px; }
+        .badge.veg { background: #EAF2EA; color: #2D4030; } .badge.moa { background: #FDF3E5; color: #8A6020; } 
+        .badge.talk { background: #FCEBE6; color: #9C422A; } .badge.hidden { background: #F0E8F5; color: #6A3A8A; } 
+        .badge.mark { background: #E6F3F5; color: #1E6B7A; } .badge.bf { background: #F2EFE9; color: #575048; border: 1px dashed var(--soft-gold); }
+
+        .info-table { width: 100%; font-size: 0.85rem; color: var(--charcoal); border-collapse: collapse; margin-bottom: 18px; }
+        .info-table td { padding: 8px 0; border-bottom: 1px solid var(--border-color); }
+        .info-table td.title { width: 75px; font-weight: 700; }
+
+        .nav-btn { display: inline-block; padding: 8px 12px; font-size: 0.75rem; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; transition: transform 0.2s; }
+        .nav-btn.n-map { background: #03C75A; } .nav-btn.k-map { background: #FEE500; color: #000; }
+        .sns-btn { display: inline-block; padding: 7px 12px; font-size: 0.75rem; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; margin-right: 6px; }
+        .sns-btn.insta { background: #8C4331; } .sns-btn.web { background: #3B5A75; }
+
+        .interview-box { font-size: 0.88rem; line-height: 1.85; color: var(--charcoal); background: rgba(255,255,255,0.85); padding: 16px; border-radius: 12px; border-left: 4px solid var(--sage); margin-top: 10px; text-align: justify; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+
+        .tts-btn { background: var(--sage); color: #FFF; border: none; padding: 10px 14px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; cursor: pointer; margin-top: 16px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .tts-btn:hover { transform: translateY(-2px); }
+
+        /* PAGE 4: 마을 이야기 아코디언 북 패널 UI */
+        .page-story-section { 
+            min-height: 100vh; padding: 90px 20px; 
+            background: linear-gradient(180deg, rgba(234, 227, 213, 0.88) 0%, rgba(234, 227, 213, 0.94) 100%),
+                        url('https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat fixed;
+            text-align: center; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; 
+        }
+        .story-header-title { font-family: 'Nanum Myeongjo', serif; font-size: 2.1rem; font-weight: 800; color: var(--charcoal); margin-bottom: 12px; }
+
+        .accordion-book { display: flex; width: 100%; max-width: 1150px; height: 500px; margin: 0 auto; gap: 14px; }
+        .book-panel { flex: 1; position: relative; overflow: hidden; border-radius: 20px; background-size: cover; background-position: center; cursor: pointer; transition: flex 0.6s cubic-bezier(0.25, 1, 0.5, 1); border: 1px solid var(--border-color); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .book-panel.active { flex: 5.5; cursor: default; }
+
+        .panel-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(43,40,37,0.15) 0%, rgba(43,40,37,0.88) 100%); transition: background 0.4s; }
+
+        .panel-vertical-title { position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%) rotate(-90deg); transform-origin: left bottom; white-space: nowrap; color: #F4EFEA; font-family: 'Nanum Myeongjo', serif; font-size: 1.15rem; font-weight: 700; transition: opacity 0.3s; pointer-events: none; }
+        .book-panel.active .panel-vertical-title { opacity: 0; }
+
+        .panel-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 40px; color: #F4EFEA; text-align: left; opacity: 0; transform: translateY(20px); transition: opacity 0.4s 0.2s, transform 0.4s 0.2s; pointer-events: none; }
+        .book-panel.active .panel-content { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+        .panel-chapter { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.22em; color: var(--soft-gold); margin-bottom: 8px; text-transform: uppercase; }
+        .panel-title { font-family: 'Nanum Myeongjo', serif; font-size: 1.75rem; font-weight: 800; margin-bottom: 14px; line-height: 1.3; }
+        .panel-quote { font-size: 0.95rem; font-style: italic; color: #CDE2D5; margin-bottom: 14px; }
+        .panel-desc { font-size: 0.9rem; line-height: 1.85; color: #E5E0D5; max-width: 680px; }
+
+        /* 모바일 하단 탭 내비게이션 바 */
+        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: rgba(43, 40, 37, 0.96); backdrop-filter: blur(10px); z-index: 9999; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); }
+        .m-nav-item { color: #9A9288; text-decoration: none; font-size: 0.7rem; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .m-nav-item.active { color: var(--soft-gold); }
+
+        /* PAGE 5: 푸터 */
+        footer.page-footer { width: 100%; background: #1A1816; color: #9A9288; padding: 45px 20px 80px 20px; text-align: center; font-size: 0.85rem; line-height: 1.85; border-top: 1px solid rgba(255,255,255,0.08); }
+        footer.page-footer strong { color: #F4EFEA; font-weight: 600; }
+
+        @media (max-width: 900px) {
+            .map-frame-container { flex-direction: column; height: auto; min-height: 820px; }
+            #map { width: 100%; height: 50vh; }
+            #sidebar-box { width: 100%; height: 50vh; border-left: none; border-top: 1px solid var(--border-color); }
+            .mobile-bottom-nav { display: flex; }
+            .accordion-book { flex-direction: column; height: auto; }
+            .book-panel { height: 130px; flex: none; }
+            .book-panel.active { height: 340px; flex: none; }
+            .panel-vertical-title { transform: none; bottom: 20px; left: 20px; }
+            .swallow-panel { bottom: 70px; left: 12px; padding: 8px 12px; }
+            .map-top-bar { max-width: 90%; font-size: 11px; }
+            .cover-card { padding: 35px 25px; }
+            .guide-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ♿ 베리어프리 상단 툴바 -->
+<div class="accessibility-bar" aria-label="접근성 옵션">
+    <button class="a11y-btn" onclick="toggleHighContrast()">👁️ 고대비 모드</button>
+    <button class="a11y-btn" onclick="changeFontSize(3)">가+</button>
+    <button class="a11y-btn" onclick="changeFontSize(-3)">가-</button>
+</div>
+
+<!-- PAGE 1: 프롤로그 커버 -->
+<section class="page-cover" id="page1">
+    <div class="cover-card">
+        <h1 class="cover-title">덕산·수산,<br>씨앗과 사람이 뿌리내린 자리</h1>
+        <p class="cover-sub">
+            바람이 지나는 월악산 자락, 오래된 양조장에서 나는 누룩 소리와 다정한 마을 책방의 온기.<br>
+            덕산·수산의 현장을 누비며 모은 53개 공간과 여섯 가지 다정한 기록입니다.
+        </p>
+        <a href="#page2" class="scroll-down">↓ 지도 기록 둘러보기</a>
+    </div>
+</section>
+
+<!-- PAGE 2: 지도 기호표 -->
+<section class="page-guide-wrapper" id="page2">
+    <div class="page-guide">
+        <h2 style="font-family:'Nanum Myeongjo', serif; font-size: 1.65rem; text-align:center; margin-bottom: 12px; color: var(--charcoal);">📖 지도를 읽는 네 가지 결</h2>
+        <p style="text-align:center; font-size:0.9rem; opacity:0.8; margin-bottom:25px;">마커의 색상과 아이콘으로 덕산·수산의 공간 성격을 한눈에 파악해 보세요.</p>
+        <div class="guide-grid">
+            <div class="guide-item"><span class="color-dot dot-blue">🏛️</span> <div><strong>결 (Heritage):</strong> 역사, 오래된 가옥, 예술가 공간</div></div>
+            <div class="guide-item"><span class="color-dot dot-orange">🎉</span> <div><strong>흥 (Activity):</strong> 수상레저, 체험마을, 활력 넘치는 공간</div></div>
+            <div class="guide-item"><span class="color-dot dot-purple">🍶</span> <div><strong>맛 (Local Flavor):</strong> 약초밥상, 로컬카페, 시장, 양조장</div></div>
+            <div class="guide-item"><span class="color-dot dot-green">🌿</span> <div><strong>쉼 (Re-charge):</strong> 고요한 산책로, 정원, 휴식 공간</div></div>
+        </div>
+        <div style="text-align:center; margin-top:35px;">
+            <a href="#page3" style="background:var(--sage); color:white; padding:14px 28px; border-radius:25px; text-decoration:none; font-size:0.9rem; font-weight:bold; box-shadow:0 4px 15px rgba(45,64,48,0.3);">지도 펼쳐보기 ➔</a>
+        </div>
+    </div>
+</section>
+
+<!-- PAGE 3: 메인 지도 섹션 -->
+<section id="page3" class="page-map-wrapper">
+    <div class="map-section-header">
+        <div class="tag">EXPLORE DUKSAN & SUSAN</div>
+        <h2>🍃 덕산·수산 로컬 인터랙티브 맵</h2>
+    </div>
+
+    <div class="map-frame-container">
+        <!-- 상단 필터 & 추천 코스 -->
+        <div class="map-top-bar">
+            <button class="filter-btn active" onclick="filterMarkers('전체')">전체보기</button>
+            <button class="filter-btn" onclick="filterMarkers('결')">🏛️ 결</button>
+            <button class="filter-btn" onclick="filterMarkers('흥')">🎉 흥</button>
+            <button class="filter-btn" onclick="filterMarkers('맛')">🍽️ 맛</button>
+            <button class="filter-btn" onclick="filterMarkers('쉼')">🌲 쉼</button>
+            <span style="border-right: 1px solid var(--border-color); height: 16px; margin: 0 4px;"></span>
+            <span style="font-size:0.75rem; font-weight:800; color:var(--sage);">🚶‍♂️ 추천 코스:</span>
+            <button class="course-btn" onclick="drawCourse('healing')">🌲 쉼 산책길</button>
+            <button class="course-btn" onclick="drawCourse('flavor')">🍽️ 로컬 미식길</button>
+            <button class="course-btn" onclick="drawCourse('culture')">🎨 공예 예술길</button>
+        </div>
+
+        <!-- 🐦 복원된 제비 길잡이 패널 -->
+        <div class="swallow-panel">
+            <div class="swallow-avatar">🐦</div>
+            <div>
+                <div style="font-size:0.75rem; font-weight:800; color:var(--sage);">길잡이 제비 이동</div>
+                <div style="display:flex; gap:6px; margin-top:4px;">
+                    <button class="nav-location-btn" onclick="moveSwallowTo('덕산')">📍 덕산면</button>
+                    <button class="nav-location-btn" onclick="moveSwallowTo('수산')">🌊 수산면</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="map"></div>
+
+        <div id="sidebar-box">
+            <div class="placeholder" id="holder">
+                🌱 지도 위의 핀을 누르거나<br>상단 추천 코스 버튼을 눌러보세요.<br>이곳에 상세한 현장 이야기가 펼쳐집니다.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- PAGE 4: 마을 이야기 아코디언 북 패널 UI -->
+<section id="page4" class="page-story-section">
+    <h2 class="story-header-title">🍃 마을 이야기 — 현장의 순간들</h2>
+    <div class="accordion-book" id="accordionBook"></div>
+</section>
+
+<!-- 📱 모바일 하단 탭바 -->
+<nav class="mobile-bottom-nav">
+    <a href="#page1" class="m-nav-item"><span>🏠</span>홈</a>
+    <a href="#page3" class="m-nav-item active"><span>🗺️</span>지도</a>
+    <a href="#page4" class="m-nav-item"><span>📖</span>이야기</a>
+</nav>
+
+<!-- PAGE 5: 푸터 -->
+<footer class="page-footer">
+    <p>덕산·수산 로컬 스토리북 (Duksan & Susan Interactive Local Map)</p>
+    <p style="margin-top:6px; font-weight:bold; color:#F4EFEA;">© 2026 Kim Minju</p>
+</footer>
+
+<script>
+    const places = [{"id": 0, "name": "설렘공방", "vibe": "흥", "lat": 37.02985, "lng": 128.21148, "address": "충북 제천시 덕산면 약초로3길 17 설렘공방", "time": "월 8:00~17:30 화 8:00~17:30 수 8:00~17:30 목 8:00~17:30 금 8:00~17:30 토 8:00~17:30", "holiday": "일", "tel": "010-3579-4497", "interview": "진행함", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge hidden'>🔍 로컬히든스팟</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/sulream_445' target='_blank' class='sns-btn insta'>📸 인스타 @sulream_445</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/설렘공방\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/설렘공방\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 1, "name": "작은숲 피아노(학원)", "vibe": "흥", "lat": 37.0289, "lng": 128.2123, "address": "충북 제천시 덕산면 도전리 141", "time": "화 13:30~8:30 목 13:30~18:30", "holiday": "월, 수, 금, 토, 일", "tel": "010-9125-9578", "interview": "다음에 재방문 예정", "badges": "<span class='badge hidden'>🔍 로컬히든스팟</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/작은숲%20피아노(학원)\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/작은숲%20피아노(학원)\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 2, "name": "올음음식문화연구소", "vibe": "결", "lat": 37.0285, "lng": 128.2135, "address": "충북 제천시 덕산면 수산리 154-1", "time": "-", "holiday": "-", "tel": "010-8565-6951", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge hidden'>🔍 로컬히든스팟</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/올음음식문화연구소\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/올음음식문화연구소\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 3, "name": "월악파머스 캠핑장", "vibe": "흥", "lat": 36.9852, "lng": 128.1654, "address": "충북 제천시 덕산면 월악산로 450-5", "time": "예약제, 주말 가능", "holiday": "-", "tel": "0507-1388-4346", "interview": "진행함", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge mark'>🚩 지역 랜드마크</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/farmers_camp_ground' target='_blank' class='sns-btn insta'>📸 인스타 @farmers_camp_ground</a><a href='https://cafe.naver.com/farmerscampingground.cafe' target='_blank' class='sns-btn web'>🏡 웹페이지</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/월악파머스%20캠핑장\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/월악파머스%20캠핑장\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 4, "name": "나들가게 대림마트", "vibe": "맛", "lat": 37.0292, "lng": 128.2108, "address": "충북 제천시 덕산면 약초로3안길 5", "time": "평일,토 8:30 ~ 20:00", "holiday": "일", "tel": "043-642-3162", "interview": "진행 못함 (바빠서, 부재)", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span>  <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/나들가게%20대림마트\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/나들가게%20대림마트\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 5, "name": "대풍마트", "vibe": "맛", "lat": 37.0287, "lng": 128.2119, "address": "충북 제천시 덕산면 도전리 813-6", "time": "매일 6:00~20:00", "holiday": "-", "tel": "043-648-5642", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span>  <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/대풍마트\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/대풍마트\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 6, "name": "나들가게 대동마트", "vibe": "맛", "lat": 37.0295, "lng": 128.2112, "address": "충청북도 제천시 덕산면 약초로3길 3", "time": "매일 7:00~21:00", "holiday": "-", "tel": "043-642-3006", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span>  <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/나들가게%20대동마트\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/나들가게%20대동마트\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 7, "name": "4월의 밀밭", "vibe": "맛", "lat": 37.0012, "lng": 128.1895, "address": "충북 제천시 덕산면 월악산로 396-5", "time": "수 11:00 - 19:00 목 11:00 - 19:00 금  11:00 - 19:00  토,일 09:00 - 19:00", "holiday": "월, 화", "tel": "0507-1379-6022", "interview": "진행 못함 (바빠서, 부재)", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge mark'>🚩 지역 랜드마크</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/april_wheatfield' target='_blank' class='sns-btn insta'>📸 인스타 @april_wheatfield</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/4월의%20밀밭\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/4월의%20밀밭\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 8, "name": "야생초 편지", "vibe": "결", "lat": 37.0381, "lng": 128.2251, "address": "충청북도 제천시 덕산면 약초로 817", "time": "-", "holiday": "-", "tel": "010-9942-7848", "interview": "다음에 재방문 예정", "badges": " <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/야생초%20편지\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/야생초%20편지\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 9, "name": "파인커피", "vibe": "맛", "lat": 37.0296, "lng": 128.2111, "address": "충청북도 제천시 덕산면 악초로 5", "time": "월~일: 08:00~20:00 명절연휴:정상영", "holiday": "-", "tel": "0507-1408-6430", "interview": "진행 못함 (바빠서, 부재)", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/파인커피\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/파인커피\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 10, "name": "성암휴게소식당", "vibe": "맛", "lat": 37.042, "lng": 128.219, "address": "충청북도 제천시 덕산면 성암리 492", "time": "매일 11시~14시 (비공식적으로 8시~10시도 영업함)", "holiday": "-", "tel": "정보 없음", "interview": "", "badges": "<span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/성암휴게소식당\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/성암휴게소식당\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 11, "name": "심심한 책방", "vibe": "결", "lat": 37.0345, "lng": 128.2178, "address": "충북 제천시 덕산면 신현3길 27", "time": "매일 11:00 ~ 19:00, 휴게시간 13:00 ~ 15:00", "holiday": "-", "tel": "010-9538-6624", "interview": "진행 못함 (바빠서, 부재)", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/simsimhan_bookshop' target='_blank' class='sns-btn insta'>📸 인스타 @simsimhan_bookshop</a><a href='https://smartstore.naver.com/simsimee' target='_blank' class='sns-btn web'>🛒 스마트스토어</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/심심한%20책방\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/심심한%20책방\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 12, "name": "제천 간디학교", "vibe": "결", "lat": 37.033, "lng": 128.2195, "address": "충북 제천시 덕산면 약초로 561", "time": "문의드림-대표님", "holiday": "문의드림-대표님", "tel": "043-653-5791(없는번호라 하심)", "interview": "진행 못함 (바빠서, 부재)", "badges": "<span class='badge mark'>🚩 지역 랜드마크</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='http://www.gandhischool.org/' target='_blank' class='sns-btn web'>🏡 웹페이지</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/제천%20간디학교\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/제천%20간디학교\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 13, "name": "월악산 마애봉", "vibe": "쉼", "lat": 36.875, "lng": 128.085, "address": "충북 제천시 한수면 송계리 산 15-6", "time": "-", "holiday": "-", "tel": "-", "interview": "진행 못함 (바빠서, 부재)", "badges": "<span class='badge mark'>🚩 지역 랜드마크</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/월악산%20마애봉\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/월악산%20마애봉\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 14, "name": "용하구곡", "vibe": "쉼", "lat": 36.945, "lng": 128.135, "address": "충북 제천시 덕산면 월악리 산 1-57", "time": "-", "holiday": "-", "tel": "-", "interview": "진행 못함 (바빠서, 부재)", "badges": "<span class='badge mark'>🚩 지역 랜드마크</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/용하구곡\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/용하구곡\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 15, "name": "월악산 영봉", "vibe": "쉼", "lat": 36.885, "lng": 128.095, "address": "충북 제천시 덕산면 월악리 산 1-1", "time": "-", "holiday": "-", "tel": "-", "interview": "진행 못함 (바빠서, 부재)", "badges": "<span class='badge mark'>🚩 지역 랜드마크</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/월악산%20영봉\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/월악산%20영봉\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 16, "name": "산중다연 펜션", "vibe": "쉼", "lat": 36.968, "lng": 128.148, "address": "충청북도 제천시 덕산면 월악산로 1071-8", "time": "현장 문의", "holiday": "없음", "tel": "0507-1493-2772", "interview": "진행 못함 (바빠서, 부재)", "badges": "<span class='badge hidden'>🔍 로컬히든스팟</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='http://www.sanjungdayeon.kr' target='_blank' class='sns-btn web'>🏡 웹페이지</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/산중다연%20펜션\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/산중다연%20펜션\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 17, "name": "청년마을(주)", "vibe": "결", "lat": 36.985, "lng": 128.164, "address": "충청북도 제천시 덕산면 월악산로 451", "time": "평일 9:00 ~ 18:00 동절기 9:00 ~ 17:00", "holiday": "-", "tel": "010-8838-3740", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='http://youthland.co.kr' target='_blank' class='sns-btn web'>🏡 웹페이지</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/청년마을(주)\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/청년마을(주)\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 18, "name": "바보농장", "vibe": "결", "lat": 37.026, "lng": 128.215, "address": "충청북도 제천시 덕산면 도전리 758번지", "time": "-", "holiday": "-", "tel": "010-8838-3740", "interview": "", "badges": "<span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/바보농장\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/바보농장\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 19, "name": "선고3리마을(와둔지) 보호수", "vibe": "결", "lat": 37.045, "lng": 128.23, "address": "덕산·수산 관내", "time": "-", "holiday": "-", "tel": "-", "interview": "", "badges": "<span class='badge hidden'>🔍 로컬히든스팟</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/선고3리마을(와둔지)%20보호수\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/선고3리마을(와둔지)%20보호수\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 20, "name": "덕담", "vibe": "맛", "lat": 37.0299, "lng": 128.2116, "address": "충청북도 제천시 덕산면 약초로3길 24", "time": "화~일 9시~6시", "holiday": "월요일", "tel": "010-3738-1405", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/duckdam.official' target='_blank' class='sns-btn insta'>📸 인스타 @duckdam.official</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/덕담\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/덕담\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 21, "name": "누리꿈터덕산지역아동센터", "vibe": "맛", "lat": 37.0298, "lng": 128.2115, "address": "충청북도 제천시 덕산면 약초로3길 17 2층", "time": "학기중: 10시~19시 방학중:9시~18시", "holiday": "공휴일", "tel": "043-643-4727", "interview": "", "badges": "<span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://blog.naver.com/nuriggum88' target='_blank' class='sns-btn web'>🏡 웹페이지</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/누리꿈터덕산지역아동센터\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/누리꿈터덕산지역아동센터\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 22, "name": "통큰식당", "vibe": "맛", "lat": 37.0294, "lng": 128.2109, "address": "충청북도 제천시 덕산면 약초로3길 5-1", "time": "화-일 8시30분~17시30분 (월요일 장날 4,9장은 영업함)", "holiday": "월요일", "tel": "043-645-3005", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge mark'>🚩 지역 랜드마크</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/통큰식당\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/통큰식당\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 23, "name": "플레이스4", "vibe": "맛", "lat": 37.03, "lng": 128.2117, "address": "충청북도 제천시 덕산면 약초로3길 19", "time": "화 11시~17시30분, 수-일 11시~19시", "holiday": "월요일", "tel": "043-648-0088", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/place4.cafe' target='_blank' class='sns-btn insta'>📸 인스타 @place4.cafe</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/플레이스4\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/플레이스4\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 24, "name": "빵이랑 커피랑", "vibe": "맛", "lat": 37.0288, "lng": 128.2105, "address": "충청북도 제천시 덕산면 약초로 97 1층", "time": "매일 6시30분~ 22시", "holiday": "-", "tel": "043-653-0089", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/빵이랑%20커피랑\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/빵이랑%20커피랑\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 25, "name": "녹는점", "vibe": "맛", "lat": 37.0291, "lng": 128.2107, "address": "충청북도 제천시 덕산면 약초로 3안길 4-1", "time": "화-토 10시~20시, 일 10시~14시", "holiday": "월요일", "tel": "0507-1311-0724", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/meltingpoint_log' target='_blank' class='sns-btn insta'>📸 인스타 @meltingpoint_log</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/녹는점\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/녹는점\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 26, "name": "아오바바", "vibe": "맛", "lat": 37.0293, "lng": 128.2106, "address": "충청북도 제천시 덕산면 약초로3안길 9", "time": "월,수-일 10시~19시", "holiday": "화요일", "tel": "0507-1412-2560", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/official_aobaba' target='_blank' class='sns-btn insta'>📸 인스타 @official_aobaba</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/아오바바\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/아오바바\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 27, "name": "덕산오마니순대국", "vibe": "맛", "lat": 37.0286, "lng": 128.2102, "address": "충청북도 제천시 덕산면 약초로 109-1", "time": "월-토 11시~20시 (14시~17시 브레이크타임)", "holiday": "일요일", "tel": "043-653-4343", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/덕산오마니순대국\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/덕산오마니순대국\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 28, "name": "다와연", "vibe": "맛", "lat": 36.965, "lng": 128.145, "address": "충청북도 제천시 덕산면 월악로 2611", "time": "매일 8시30분~21시(20시30분까지 와야 주문가능), 겨울: 9시~21시", "holiday": "없음", "tel": "0507-1444-8959", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/dawayeon_cafe' target='_blank' class='sns-btn insta'>📸 인스타 @dawayeon_cafe</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/다와연\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/다와연\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 29, "name": "성천식당", "vibe": "맛", "lat": 37.0275, "lng": 128.213, "address": "충청북도 제천시 덕산면 도전리 450-7", "time": "매일 11시~21시(브레이크타임 2시~4시반)", "holiday": "없음", "tel": "043-644-3255", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/성천식당\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/성천식당\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 30, "name": "산야초치킨마을", "vibe": "맛", "lat": 37.02925, "lng": 128.21065, "address": "충청북도 제천시 덕산면 약초로3안길 6-1", "time": "운영 시간이 일정하지 않아 영업중인지 문의", "holiday": "없음", "tel": "043-642-2983", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/산야초치킨마을\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/산야초치킨마을\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 31, "name": "후조김밥", "vibe": "맛", "lat": 37.02915, "lng": 128.21075, "address": "충청북도 제천시 덕산면 약초로3안길 12", "time": "월-토 9시~19시", "holiday": "일요일", "tel": "043-646-2747", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/후조김밥\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/후조김밥\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 32, "name": "제천식당", "vibe": "맛", "lat": 37.02945, "lng": 128.211, "address": "충청북도 제천시 덕산면 약초로3길 7", "time": "매일 11시~14시", "holiday": "-", "tel": "043-648-5020/ 043-642-3034", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/제천식당\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/제천식당\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 33, "name": "미미수제왕돈가스", "vibe": "맛", "lat": 37.0278, "lng": 128.2132, "address": "제천시 덕산면 도전리 442-4번지 1층 제천시 충청북도 KR", "time": "11시~19시 (브레이크타임 2시~4시)", "holiday": "-", "tel": "043-642-6425", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/미미수제왕돈가스\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/미미수제왕돈가스\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 34, "name": "신흥식육식당", "vibe": "맛", "lat": 37.0291, "lng": 128.21085, "address": "충청북도 제천시 덕산면 약초로3안길 14", "time": "정해진 영업시간X, 6시 이후 마감", "holiday": "없음", "tel": "043-643-4602", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/신흥식육식당\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/신흥식육식당\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 35, "name": "충북식당한우일번지", "vibe": "맛", "lat": 37.02922, "lng": 128.21072, "address": "충북 제천시 덕산면 약초로3안길 6", "time": "매일 11시~19시30분", "holiday": "-", "tel": "043-644-0585", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/충북식당한우일번지\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/충북식당한우일번지\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 36, "name": "덕산정육식당", "vibe": "맛", "lat": 37.0297, "lng": 128.2113, "address": "충청북도 제천시 덕산면 약초로4", "time": "매일 7시~21시", "holiday": "-", "tel": "043-644-6631", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/덕산정육식당\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/덕산정육식당\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 37, "name": "삼거리횟집", "vibe": "맛", "lat": 37.0415, "lng": 128.2185, "address": "충청북도 제천시 덕산면 성암리 479-3", "time": "매일 11시~20시", "holiday": "-", "tel": "043-645-8306", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/삼거리횟집\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/삼거리횟집\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 38, "name": "대성송어양식장 횟집", "vibe": "맛", "lat": 36.968, "lng": 128.147, "address": "충청북도 제천시 덕산면 월악로 2370", "time": "월화목금토일 11시~20시", "holiday": "수", "tel": "010-9957-9967", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/gimjvn(인스타,유튜브)' target='_blank' class='sns-btn insta'>📸 인스타 @gimjvn(인스타,유튜브)</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/대성송어양식장%20횟집\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/대성송어양식장%20횟집\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 39, "name": "흥원철물", "vibe": "결", "lat": 37.02965, "lng": 128.21125, "address": "충청북도 제천시 덕산면 약초로3길 13", "time": "월-토 7시~18시, 공휴일도 영업", "holiday": "일", "tel": "043-642-3051", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/흥원철물\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/흥원철물\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 40, "name": "간디마을센터", "vibe": "결", "lat": 37.02982, "lng": 128.21142, "address": "충청북도 제천시 덕산면 약초리3길 17", "time": "-", "holiday": "-", "tel": "-", "interview": "", "badges": "<span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/간디마을센터\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/간디마을센터\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 41, "name": "고려한의원", "vibe": "쉼", "lat": 37.02942, "lng": 128.21098, "address": "충청북도 제천시 덕산면 약초로3길 7", "time": "월-금 8:00~15:30, 토 8:30~12:30 휴게시간 13:00~14:00", "holiday": "일", "tel": "070-8826-1075", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span>  <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/고려한의원\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/고려한의원\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 42, "name": "연세의원", "vibe": "쉼", "lat": 37.02895, "lng": 128.2103, "address": "충북 제천시 덕산면 약초로 81", "time": "월-금 9:00~17:30, 토 9:00~13:00", "holiday": "일", "tel": "043-643-6490", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span>  <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/연세의원\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/연세의원\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 43, "name": "수리보호수", "vibe": "결", "lat": 36.975, "lng": 128.235, "address": "충청북도 제천시 수산면 수리 428-1", "time": "-", "holiday": "-", "tel": "-", "interview": "", "badges": "<span class='badge hidden'>🔍 로컬히든스팟</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/수리보호수\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/수리보호수\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 44, "name": "카페목화", "vibe": "맛", "lat": 36.955, "lng": 128.215, "address": "충청북도 제천시 수산면 상천1길 6", "time": "화~일: 10시~18시", "holiday": "월", "tel": "0507-1428-3799", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/cafemokhwa043' target='_blank' class='sns-btn insta'>📸 인스타 @cafemokhwa043</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/카페목화\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/카페목화\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 45, "name": "보호수", "vibe": "결", "lat": 37.029, "lng": 128.21820000000002, "address": "덕산·수산 관내", "time": "-", "holiday": "-", "tel": "-", "interview": "", "badges": "<span class='badge hidden'>🔍 로컬히든스팟</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/보호수\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/보호수\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 46, "name": "카페슬로윗 수산", "vibe": "맛", "lat": 36.982, "lng": 128.242, "address": "충청북도 제천시 수산면 월악로22길 95", "time": "월~목: 10시~18시, 금: 10시~17시", "holiday": "토,일", "tel": "0507-1344-4946", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/cafe_sloweet' target='_blank' class='sns-btn insta'>📸 인스타 @cafe_sloweet</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/카페슬로윗%20수산\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/카페슬로윗%20수산\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 47, "name": "자두락마을", "vibe": "결", "lat": 36.992, "lng": 128.255, "address": "충청북도 제천시 수산면 수곡리 1173", "time": "-", "holiday": "-", "tel": "-", "interview": "", "badges": "<span class='badge mark'>🚩 지역 랜드마크</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/jadu.maeul' target='_blank' class='sns-btn insta'>📸 인스타 @jadu.maeul</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/자두락마을\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/자두락마을\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 48, "name": "가장 오래살았수유 나무", "vibe": "결", "lat": 36.9824, "lng": 128.24720000000002, "address": "충청북도 제천시 수산면 상천리 295-1", "time": "-", "holiday": "-", "tel": "-", "interview": "", "badges": "<span class='badge hidden'>🔍 로컬히든스팟</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/가장%20오래살았수유%20나무\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/가장%20오래살았수유%20나무\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 49, "name": "보호수(느티나무)", "vibe": "결", "lat": 37.0322, "lng": 128.21820000000002, "address": "덕산·수산 관내", "time": "-", "holiday": "-", "tel": "-", "interview": "", "badges": "<span class='badge hidden'>🔍 로컬히든스팟</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/보호수(느티나무)\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/보호수(느티나무)\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 50, "name": "오티별신제전수관", "vibe": "결", "lat": 36.965, "lng": 128.265, "address": "충청북도 제천시 수산면 오티리 591-3", "time": "-", "holiday": "-", "tel": "-", "interview": "", "badges": "<span class='badge hidden'>🔍 로컬히든스팟</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<span style='color:#9E978C; font-style:italic; font-size:13px;'>등록된 링크가 없습니다.</span>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/오티별신제전수관\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/오티별신제전수관\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 51, "name": "글루글루", "vibe": "맛", "lat": 36.942, "lng": 128.228, "address": "충북 제천시 수산면 옥순봉로10길 2 2동", "time": "일\n10:00 - 19:00\n18:50 라스트오더\n월\n11:00 - 18:30\n18:20 라스트오더\n화\n11:00 - 18:30\n18:20 라스트오더\n수\n11:00 - 18:30\n18:20 라스트오더\n목\n11:00 - 18:30\n18:20 라스트오더\n금\n11:00 - 18:30\n18:20 라스트오더\n토\n10:00 - 19:00\n18:50 라스트오더", "holiday": "-", "tel": "0507-1358-2664", "interview": "", "badges": "<span class='badge veg'>🌱 채식 옵션</span> <span class='badge moa'>🪙 제천모아</span> <span class='badge talk'>🤝 주민교류형</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://instagram.com/cafe_glouglou' target='_blank' class='sns-btn insta'>📸 인스타 @cafe_glouglou</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/글루글루\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/글루글루\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}, {"id": 52, "name": "측백숲으로", "vibe": "흥", "lat": 36.985, "lng": 128.248, "address": "충북 제천시 수산면 수산리 25-1", "time": "매일 9:00~18:00", "holiday": "-", "tel": "043-644-6550", "interview": "", "badges": "<span class='badge moa'>🪙 제천모아</span> <span class='badge mark'>🚩 지역 랜드마크</span> <span class='badge bf'>♿ 무장애 정보 제보 대기 중 🌿</span>", "links": "<a href='https://www.susanwellness.com/' target='_blank' class='sns-btn web'>🏡 웹페이지</a>", "nav": "\n            <div class=\"nav-btn-group\" style=\"margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;\">\n                <a href=\"https://map.naver.com/v5/search/측백숲으로\" target=\"_blank\" class=\"nav-btn n-map\">🚗 네이버지도 길찾기</a>\n                <a href=\"https://map.kakao.com/link/search/측백숲으로\" target=\"_blank\" class=\"nav-btn k-map\">🚶‍♂️ 카카오맵 길찾기</a>\n            </div>\n        "}];
+    const stories = [{"num": "01", "chapter": "CHAPTER 01", "title": "누룩이 익어가는 양조장의 아침", "subtitle": "덕산 양조장과 사람들", "quote": "도시에서의 소음이 다 잊혀지는 시간, 막걸리 한 잔의 결.", "desc": "할아버지 때부터 이어온 양조장 자리를 지키는 사장님. 덕산의 맑은 물과 가을 바람이 만들어내는 전통주의 깊은 향기를 만나봅니다.", "img": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=600&q=80"}, {"num": "02", "chapter": "CHAPTER 02", "title": "풀꽃과 새들이 쉬어가는 정원", "subtitle": "누리마을 정원의 다정함", "quote": "화려한 꽃은 없지만, 계절마다 변하는 풀빛이 우리의 마음을 다독입니다.", "desc": "마을 주민들이 오가며 호미질을 같이 하고, 바람과 씨앗이 피어낸 다채로운 숲 같은 정원 이야기입니다.", "img": "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=600&q=80"}, {"num": "03", "chapter": "CHAPTER 03", "title": "약초 향 감도는 시골 밥상", "subtitle": "덕산의 맛과 삶", "quote": "귀촌 10년 차 사장님이 직접 키운 황기로 만든 따뜻한 한 끼.", "desc": "매일 아침 텃밭에서 뜯어오는 싱싱한 채소와 3년 묵은 된장찌개. 투박하지만 시골의 깊은 정성을 대접하는 장소들입니다.", "img": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80"}, {"num": "04", "chapter": "CHAPTER 04", "title": "새벽 안개 속 고요한 오솔길", "subtitle": "수산리의 자연 오솔길", "quote": "바람 소리를 들으며 걷는 길, 나만의 리듬을 되찾는 시간.", "desc": "봄에는 진달래가, 가을에는 은빛 억새가 반겨주는 비밀 산책로. 현지인들만 아는 고요한 자연 스팟의 기록입니다.", "img": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=600&q=80"}, {"num": "05", "chapter": "CHAPTER 05", "title": "다정한 문장들이 모이는 책방", "subtitle": "심심한 책방의 온기", "quote": "누군가의 일상이 문장이 되고, 문장이 다시 사람을 이어줍니다.", "desc": "덕산 골목 어귀, 사람들과 이야기를 나누며 오래 머물 수 있는 작은 서점. 마을 탐방자들의 쉼터가 되어주는 공간입니다.", "img": "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=600&q=80"}, {"num": "06", "chapter": "CHAPTER 06", "title": "손끝으로 만드는 삶의 공예", "subtitle": "설렘공방의 열정", "quote": "이 골목이 처음엔 낯설었는데, 지금은 제 삶의 전부예요.", "desc": "지역의 재료와 손길로 무언가를 계속 만들어내는 공방 이야기. 예술가와 귀촌인들이 함께 숨 쉬는 덕산의 활력입니다.", "img": "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&w=600&q=80"}];
+    const courses = [{"id": "healing", "title": "🌲 고요한 쉼과 책방 드라이브 코스", "places": ["심심한 책방", "작은숲 피아노", "야생초", "수리보호수"]}, {"id": "flavor", "title": "🍽️ 로컬 푸드 & 디저트 탐방길", "places": ["4월의 밀밭", "파인커피", "덕담", "카페목화"]}, {"id": "culture", "title": "🎨 손길과 이야기 공예길", "places": ["설렘공방", "누리꿈터", "간디학교", "오티별신"]}];
+    let markerMap = [];
+    let currentPolyline = null;
+    let currentFontSize = 16;
+
+    const map = L.map('map', { zoomControl: false }).setView([37.0292, 128.2115], 14);
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google Maps',
+        maxZoom: 18
+    }).addTo(map);
+
+    // 🐦 복원된 길잡이 제비 마커 SVG 및 아이콘
+    const swallowSvg = `<svg class="swallow-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="32" r="28" fill="#2D4030" opacity="0.15"/>
+        <path d="M12 34C12 22 24 14 36 18C48 22 52 36 44 44C36 52 20 50 12 34Z" fill="#2D4030"/>
+        <path d="M38 16C44 12 52 16 54 24C46 24 40 20 38 16Z" fill="#C5A059"/>
+        <circle cx="42" cy="24" r="2.5" fill="#FFF"/><circle cx="43" cy="24" r="1" fill="#000"/>
+        <polygon points="50,26 60,28 50,32" fill="#B86B53"/>
+    </svg>`;
+
+    const swallowIcon = L.divIcon({
+        className: 'swallow-marker',
+        html: `<div>${swallowSvg}</div>`,
+        iconSize: [44, 44],
+        iconAnchor: [22, 22]
+    });
+
+    const movingSwallowMarker = L.marker([37.0292, 128.2115], { icon: swallowIcon, zIndexOffset: 2000 }).addTo(map);
+
+    function moveSwallowTo(target) {
+        clearCourse();
+        let destLat = 37.0292, destLng = 128.2115, zoomLvl = 15;
+        if (target === '수산') {
+            destLat = 36.9750; destLng = 128.2450; zoomLvl = 13.5;
+        }
+        movingSwallowMarker.setLatLng([destLat, destLng]);
+        map.flyTo([destLat, destLng], zoomLvl, { duration: 1.4 });
+    }
+
+    function createCustomIcon(color) {
+        let iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png';
+        if (color === 'purple') iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png';
+        else if (color === 'blue') iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
+        else if (color === 'orange') iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png';
+
+        return L.icon({
+            iconUrl: iconUrl,
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34]
+        });
+    }
+
+    function getMarkerColor(vibe) {
+        if (vibe === '맛') return 'purple';
+        if (vibe === '결') return 'blue';
+        if (vibe === '흥') return 'orange';
+        return 'green';
+    }
+
+    places.forEach((p, idx) => {
+        const color = getMarkerColor(p.vibe);
+        const icon = createCustomIcon(color);
+
+        const popupContent = `
+            <div style="text-align:center; padding: 4px;">
+                <div style="font-weight:800; font-size:0.95rem; margin-bottom:4px;">${p.name}</div>
+                <button style="background:#2D4030; color:white; border:none; padding:6px 12px; border-radius:12px; font-size:0.75rem; font-weight:bold; cursor:pointer;" onclick="renderSidebar(${idx})">📖 상세정보 보기 ➔</button>
+            </div>
+        `;
+
+        const marker = L.marker([p.lat, p.lng], {icon: icon})
+            .addTo(map)
+            .bindPopup(popupContent);
+
+        markerMap.push({ name: p.name, id: p.id, vibe: p.vibe, marker: marker, lat: p.lat, lng: p.lng });
+    });
+
+    function filterMarkers(vibeCat) {
+        clearCourse();
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText.includes(vibeCat) || (vibeCat === '전체' && btn.innerText === '전체보기'));
+        });
+
+        markerMap.forEach(item => {
+            if (vibeCat === '전체' || item.vibe === vibeCat) {
+                map.addLayer(item.marker);
+            } else {
+                map.removeLayer(item.marker);
+            }
+        });
+    }
+
+    function drawCourse(courseId) {
+        clearCourse();
+        const courseObj = courses.find(c => c.id === courseId);
+        if (!courseObj) return;
+
+        document.querySelectorAll('.course-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('onclick').includes(courseId));
+        });
+
+        const routeLatLngs = [];
+        let sidebarHtml = `<div style="font-size:0.75rem; font-weight:800; color:var(--sage); margin-bottom:6px;">RECOMMENDED TRAIL</div>`;
+        sidebarHtml += `<h2 style="font-family:'Nanum Myeongjo', serif; font-size:1.5rem; font-weight:800; margin-bottom:18px;">${courseObj.title}</h2>`;
+        sidebarHtml += `<div style="display:flex; flex-direction:column; gap:12px;">`;
+
+        courseObj.places.forEach((pName, stepIdx) => {
+            const found = markerMap.find(m => m.name.includes(pName));
+            if (found) {
+                routeLatLngs.push([found.lat, found.lng]);
+                sidebarHtml += `
+                    <div style="background:rgba(255,255,255,0.85); padding:14px; border-radius:12px; border-left:4px solid var(--sage); cursor:pointer;" onclick="map.flyTo([${found.lat}, ${found.lng}], 16)">
+                        <div style="font-size:0.7rem; font-weight:bold; color:var(--soft-gold);">STEP 0${stepIdx + 1}</div>
+                        <div style="font-size:0.95rem; font-weight:bold;">${found.name}</div>
+                    </div>
+                `;
+            }
+        });
+
+        sidebarHtml += `</div>`;
+        document.getElementById('sidebar-box').innerHTML = sidebarHtml;
+
+        if (routeLatLngs.length > 0) {
+            currentPolyline = L.polyline(routeLatLngs, {
+                color: '#2D4030',
+                weight: 4,
+                dashArray: '8, 12',
+                opacity: 0.85
+            }).addTo(map);
+
+            map.fitBounds(currentPolyline.getBounds(), { padding: [50, 50] });
+            movingSwallowMarker.setLatLng(routeLatLngs[0]);
+        }
+    }
+
+    function clearCourse() {
+        if (currentPolyline) {
+            map.removeLayer(currentPolyline);
+            currentPolyline = null;
+        }
+        document.querySelectorAll('.course-btn').forEach(btn => btn.classList.remove('active'));
+    }
+
+    function renderSidebar(index) {
+        const p = places[index];
+        const sidebar = document.getElementById('sidebar-box');
+
+        movingSwallowMarker.setLatLng([p.lat, p.lng]);
+        map.flyTo([p.lat, p.lng], 16, { duration: 1.2 });
+
+        let interviewHtml = "";
+        if (p.interview && p.interview.trim() !== "") {
+            interviewHtml = `
+                <div style="font-size:0.75rem; font-weight:bold; color:var(--sage); margin-top:16px; margin-bottom:6px;">💬 마을 주민의 이야기</div>
+                <div class="interview-box">${p.interview}</div>
+            `;
+        } else {
+            interviewHtml = `
+                <div style="margin-top:16px; padding:12px; background:rgba(255,255,255,0.5); border-radius:10px; font-size:0.8rem; color:#8C857B; text-align:center;">
+                    💬 마을 주민들의 다정한 이야기가 채워질 공간입니다 🌿
+                </div>
+            `;
+        }
+
+        let ttsText = `${p.name}. 주소는 ${p.address}. 운영시간은 ${p.time}, 휴무일은 ${p.holiday}입니다.`;
+        if (p.interview && p.interview.trim() !== "") {
+            const cleanStory = p.interview.replace(/<br>/g, ' ').replace(/<[^>]*>?/gm, '');
+            ttsText += ` 현장 기록입니다. ${cleanStory}`;
+        }
+
+        sidebar.innerHTML = `
+            <div>
+                <span class="category-badge cat-${p.vibe}">${p.vibe}의 공간</span>
+                <h2 class="place-title">${p.name}</h2>
+                <div class="badge-container">${p.badges}</div>
+
+                <table class="info-table">
+                    <tr><td class="title">📍 주소</td><td>${p.address}</td></tr>
+                    <tr><td class="title">🕒 운영시간</td><td>${p.time}</td></tr>
+                    <tr><td class="title">📅 휴무일</td><td>${p.holiday}</td></tr>
+                    <tr><td class="title">📞 연락처</td><td>${p.tel}</td></tr>
+                </table>
+
+                <div style="font-size:0.75rem; font-weight:bold; opacity:0.6; margin-bottom:6px;">🚗 길찾기</div>
+                ${p.nav}
+
+                <div style="font-size:0.75rem; font-weight:bold; opacity:0.6; margin-top:16px; margin-bottom:6px;">🔗 로컬 커넥트</div>
+                <div>${p.links}</div>
+
+                ${interviewHtml}
+
+                <button class="tts-btn" onclick="speakText('${ttsText.replace(/'/g, "\'")}')">🔊 상세정보 음성으로 들려주기</button>
+            </div>
+        `;
+        sidebar.scrollTop = 0;
+    }
+
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            utterance.rate = 0.95;
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert('이 브라우저는 음성 안내를 지원하지 않습니다.');
+        }
+    }
+
+    function toggleHighContrast() {
+        document.body.classList.toggle('high-contrast');
+    }
+
+    function changeFontSize(delta) {
+        currentFontSize += delta;
+        if (currentFontSize < 13) currentFontSize = 13;
+        if (currentFontSize > 28) currentFontSize = 28;
+        document.documentElement.style.fontSize = currentFontSize + 'px';
+    }
+
+    const accordionBook = document.getElementById('accordionBook');
+    stories.forEach((s, idx) => {
+        const activeClass = idx === 0 ? 'active' : '';
+        accordionBook.innerHTML += `
+            <div class="book-panel ${activeClass}" style="background-image: url('${s.img}');" onclick="activatePanel(this)" onmouseenter="activatePanel(this)">
+                <div class="panel-overlay"></div>
+                <div class="panel-vertical-title">${s.num}. ${s.title}</div>
+                <div class="panel-content">
+                    <div class="panel-chapter">${s.chapter}</div>
+                    <div class="panel-title">${s.title}</div>
+                    <div class="panel-quote">"${s.quote}"</div>
+                    <div class="panel-desc">${s.desc}</div>
+                </div>
+            </div>
+        `;
+    });
+
+    function activatePanel(element) {
+        document.querySelectorAll('.book-panel').forEach(panel => panel.classList.remove('active'));
+        element.classList.add('active');
+    }
+</script>
+
+</body>
+</html>
