@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
     덕산·수산 로컬 스토리북 (Interactive Map)
-    © 2026 Kim Minju_m27. All Rights Reserved.
+    © 2026 Kim Minju. All Rights Reserved.
 -->
 <html lang="ko">
 <head>
@@ -139,8 +139,14 @@
         .swallow-svg { width: 44px; height: 44px; animation: flyGlide 1.2s infinite ease-in-out alternate; }
         @keyframes flyGlide { 0% { transform: translateY(0) rotate(-4deg); } 100% { transform: translateY(-6px) rotate(4deg); } }
 
-        /* 오른쪽 정보 패널 */
-        #sidebar-box { width: 30%; height: 100%; background: var(--warm-cream); padding: 30px 24px; overflow-y: auto; border-left: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 100; }
+        /* Step 2: 사이드바 & 모바일 바텀시트 UI 스타일 */
+        #sidebar-box { 
+            width: 30%; height: 100%; background: var(--warm-cream); padding: 30px 24px; 
+            overflow-y: auto; border-left: 1px solid var(--border-color); display: flex; 
+            flex-direction: column; z-index: 100; transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .sheet-handle { display: none; }
+
         .placeholder { margin: auto; text-align: center; color: #9E978C; font-style: italic; line-height: 1.9; font-size: 0.9rem; }
 
         .category-badge { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 14px; margin-bottom: 14px; text-transform: uppercase; }
@@ -203,17 +209,32 @@
         footer.page-footer { width: 100%; background: #1A1816; color: #9A9288; padding: 45px 20px 80px 20px; text-align: center; font-size: 0.85rem; line-height: 1.85; border-top: 1px solid rgba(255,255,255,0.08); }
         footer.page-footer strong { color: #F4EFEA; font-weight: 600; }
 
+        /* 📱 Step 2: 모바일전용 100dvh & 바텀시트 앱 UX */
         @media (max-width: 900px) {
-            .map-frame-container { flex-direction: column; height: auto; min-height: 820px; }
-            #map { width: 100%; height: 50vh; }
-            #sidebar-box { width: 100%; height: 50vh; border-left: none; border-top: 1px solid var(--border-color); }
+            .page-map-wrapper { padding: 0; }
+            .map-frame-container { width: 100%; height: 100dvh; min-height: 100dvh; border-radius: 0; border: none; flex-direction: column; }
+            #map { width: 100%; height: 100%; }
+
+            #sidebar-box { 
+                position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 75vh; 
+                background: var(--warm-cream); border-top-left-radius: 28px; border-top-right-radius: 28px; 
+                border-left: none; border-top: 1.5px solid var(--soft-gold); box-shadow: 0 -10px 35px rgba(0,0,0,0.25); 
+                transform: translateY(calc(100% - 65px)); z-index: 2000; padding: 12px 20px 80px 20px;
+            }
+            #sidebar-box.expanded { transform: translateY(0); }
+
+            .sheet-handle { 
+                display: block; width: 42px; height: 5px; background: rgba(43,40,37,0.3); 
+                border-radius: 3px; margin: 0 auto 15px auto; cursor: pointer; 
+            }
+
             .mobile-bottom-nav { display: flex; }
             .accordion-book { flex-direction: column; height: auto; }
             .book-panel { height: 130px; flex: none; }
             .book-panel.active { height: 340px; flex: none; }
             .panel-vertical-title { transform: none; bottom: 20px; left: 20px; }
-            .swallow-panel { bottom: 70px; left: 12px; padding: 8px 12px; }
-            .map-top-bar { max-width: 90%; font-size: 11px; }
+            .swallow-panel { bottom: 75px; left: 12px; padding: 8px 12px; }
+            .map-top-bar { max-width: 92%; font-size: 11px; }
             .cover-card { padding: 35px 25px; }
             .guide-grid { grid-template-columns: 1fr; }
         }
@@ -293,7 +314,9 @@
 
         <div id="map"></div>
 
+        <!-- Step 2: 터치 드래그 핸들이 반영된 사이드바/바텀시트 -->
         <div id="sidebar-box">
+            <div class="sheet-handle" onclick="toggleBottomSheet()"></div>
             <div class="placeholder" id="holder">
                 🌱 지도 위의 핀을 누르거나<br>상단 추천 코스 버튼을 눌러보세요.<br>이곳에 상세한 현장 이야기가 펼쳐집니다.
             </div>
@@ -429,7 +452,8 @@
         });
 
         const routeLatLngs = [];
-        let sidebarHtml = `<div style="font-size:0.75rem; font-weight:800; color:var(--sage); margin-bottom:6px;">RECOMMENDED TRAIL</div>`;
+        let sidebarHtml = `<div class="sheet-handle" onclick="toggleBottomSheet()"></div>`;
+        sidebarHtml += `<div style="font-size:0.75rem; font-weight:800; color:var(--sage); margin-bottom:6px;">RECOMMENDED TRAIL</div>`;
         sidebarHtml += `<h2 style="font-family:'Nanum Myeongjo', serif; font-size:1.5rem; font-weight:800; margin-bottom:18px;">${courseObj.title}</h2>`;
         sidebarHtml += `<div style="display:flex; flex-direction:column; gap:12px;">`;
 
@@ -447,7 +471,12 @@
         });
 
         sidebarHtml += `</div>`;
-        document.getElementById('sidebar-box').innerHTML = sidebarHtml;
+        const sidebar = document.getElementById('sidebar-box');
+        sidebar.innerHTML = sidebarHtml;
+
+        if (window.innerWidth <= 900) {
+            sidebar.classList.add('expanded');
+        }
 
         if (routeLatLngs.length > 0) {
             currentPolyline = L.polyline(routeLatLngs, {
@@ -470,6 +499,7 @@
         document.querySelectorAll('.course-btn').forEach(btn => btn.classList.remove('active'));
     }
 
+    // Step 2: 사이드바 렌더링 및 모바일 바텀시트 확장 처리
     function renderSidebar(index) {
         const p = places[index];
         const sidebar = document.getElementById('sidebar-box');
@@ -498,6 +528,7 @@
         }
 
         sidebar.innerHTML = `
+            <div class="sheet-handle" onclick="toggleBottomSheet()"></div>
             <div>
                 <span class="category-badge cat-${p.vibe}">${p.vibe}의 공간</span>
                 <h2 class="place-title">${p.name}</h2>
@@ -522,6 +553,16 @@
             </div>
         `;
         sidebar.scrollTop = 0;
+
+        if (window.innerWidth <= 900) {
+            sidebar.classList.add('expanded');
+        }
+    }
+
+    // Step 2: 바텀시트 토글 함수
+    function toggleBottomSheet() {
+        const sidebar = document.getElementById('sidebar-box');
+        sidebar.classList.toggle('expanded');
     }
 
     function speakText(text) {
