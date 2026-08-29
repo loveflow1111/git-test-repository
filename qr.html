@@ -21,7 +21,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100dvh; overflow: hidden; font-family: 'Pretendard', sans-serif; background: var(--warm-cream); color: var(--charcoal); }
 
-        /* 💡 Netlify 배너 및 서버 주입 요소 강제 소멸 및 화면 밖 격리 규격 */
         .leaflet-control-attribution, .leaflet-control-scale, 
         [class*="netlify"], div[class*="netlify"], a[href*="netlify"],
         .netlify-badge, footer, iframe[src*="netlify"], div[style*="z-index: 2147483647"] { 
@@ -171,11 +170,12 @@
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([37.0292, 128.2115], 14);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
+    // 💡 오리지널 구글 지도 타일 복원
     L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        maxZoom: 18
+        maxZoom: 18,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     }).addTo(map);
 
-    // Netlify 배너 DOM 주기적 소멸 스크립트
     setInterval(() => {
         document.querySelectorAll('.leaflet-control-attribution, .leaflet-control-scale, [class*="netlify"], div[class*="netlify"], a[href*="netlify"], .netlify-badge, footer, iframe[src*="netlify"]').forEach(el => {
             el.remove();
