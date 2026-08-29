@@ -21,6 +21,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100dvh; overflow: hidden; font-family: 'Pretendard', sans-serif; background: var(--warm-cream); color: var(--charcoal); }
 
+        /* 💡 Netlify 배너 및 서버 주입 요소 강제 소멸 및 화면 밖 격리 규격 */
         .leaflet-control-attribution, .leaflet-control-scale, 
         [class*="netlify"], div[class*="netlify"], a[href*="netlify"],
         .netlify-badge, footer, iframe[src*="netlify"], div[style*="z-index: 2147483647"] { 
@@ -170,12 +171,11 @@
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([37.0292, 128.2115], 14);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // 💡 구글 지형도(Terrain, lyrs=p) 적용: 녹지와 산세의 입체감이 살아나는 선명한 지도
-    L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
-        maxZoom: 18,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 18
     }).addTo(map);
 
+    // Netlify 배너 DOM 주기적 소멸 스크립트
     setInterval(() => {
         document.querySelectorAll('.leaflet-control-attribution, .leaflet-control-scale, [class*="netlify"], div[class*="netlify"], a[href*="netlify"], .netlify-badge, footer, iframe[src*="netlify"]').forEach(el => {
             el.remove();
@@ -301,7 +301,6 @@
         document.getElementById('sidebar-box').classList.toggle('expanded');
     }
 
-    function closeBottomSheet()+(-실행 방지용) 대신 자연스럽게 닫기
     function closeBottomSheet() {
         document.getElementById('sidebar-box').classList.remove('expanded');
     }
