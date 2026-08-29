@@ -71,7 +71,6 @@
 
         .interview-box { font-size: 0.88rem; line-height: 1.85; color: var(--charcoal); background: rgba(255,255,255,0.85); padding: 14px; border-radius: 12px; border-left: 4px solid var(--sage); margin-top: 10px; }
 
-        /* 🔊 모바일 맞춤 음성 도슨트 버튼 디자인 */
         .tts-btn { 
             background: var(--sage); color: #FFF; border: none; padding: 14px; border-radius: 16px; 
             font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-top: 18px; width: 100%; 
@@ -168,7 +167,6 @@
             `;
         }
 
-        // 🔊 음성 읽기 텍스트 가공 파이프라인
         let ttsText = `${p.name}. 주소는 ${p.address}. 운영시간은 ${p.time}, 휴무일은 ${p.holiday}입니다.`;
         if (p.interview && p.interview.trim() !== "") {
             const cleanStory = p.interview.replace(/<br>/g, ' ').replace(/<[^>]*>?/gm, '');
@@ -200,7 +198,6 @@
 
                 ${interviewHtml}
 
-                <!-- 🔊 음성 도슨트 복원 버튼 -->
                 <button class="tts-btn" onclick="speakText('${ttsText.replace(/'/g, "\'")}')">
                     🔊 상세 정보 및 이야기 음성으로 들려주기
                 </button>
@@ -218,13 +215,12 @@
         document.getElementById('sidebar-box').classList.remove('expanded');
     }
 
-    // 🔊 모바일 브라우저 표준 Web Speech API 실행 함수
     function speakText(text) {
         if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel(); // 이전 재생 중단
+            window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'ko-KR';
-            utterance.rate = 0.95; // 듣기 편한 속도
+            utterance.rate = 0.95;
             window.speechSynthesis.speak(utterance);
         } else {
             alert('이 모바일 브라우저는 음성 안내를 지원하지 않습니다.');
