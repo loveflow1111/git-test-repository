@@ -29,6 +29,8 @@
         .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,0.1); }
         .dot-all { background: #888; } .dot-결 { background: #3A75C4; } .dot-흥 { background: #E6C547; } .dot-맛 { background: #8B5CF6; } .dot-쉼 { background: #22C55E; }
         .map-bottom-copyright { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 999; background: rgba(245, 240, 235, 0.92); backdrop-filter: blur(6px); padding: 5px 16px; border-radius: 12px; border: 1px solid rgba(197, 160, 89, 0.6); font-size: 0.68rem; font-weight: 700; color: #575048; white-space: nowrap; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .region-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1500; background: rgba(45, 64, 48, 0.88); color: #FFF; padding: 10px 24px; border-radius: 22px; font-family: 'Nanum Myeongjo', serif; font-weight: 800; font-size: 1.15rem; letter-spacing: 1px; pointer-events: none; opacity: 0; transition: opacity 0.35s ease; box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+        .region-label.show { opacity: 1; }
         #sidebar-box { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 75vh; background: var(--warm-cream); border-top-left-radius: 28px; border-top-right-radius: 28px; border-top: 2px solid var(--soft-gold); box-shadow: 0 -10px 35px rgba(0,0,0,0.25); transform: translateY(100%); z-index: 2000; padding: 14px 20px 30px 20px; overflow-y: auto; transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1); }
         #sidebar-box.expanded { transform: translateY(0); }
         .sheet-header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; position: relative; }
@@ -68,6 +70,7 @@
         <button class="filter-btn" onclick="filterMarkers('쉼', this)"><span class="dot dot-쉼"></span>쉼</button>
     </div>
     <div id="map"></div>
+    <div id="region-label" class="region-label"></div>
     <div class="map-bottom-copyright">Copyright 2026. Kim Minju. All rights reserved.</div>
     <div id="sidebar-box">
         <div class="sheet-header-bar"><div class="sheet-handle" onclick="toggleBottomSheet()"></div><button class="sheet-close-btn" onclick="closeBottomSheet()">✕</button></div>
