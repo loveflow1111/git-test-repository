@@ -123,7 +123,7 @@
         if (!rawInput) return;
         const cleanQuery = rawInput.replace(/\s+/g, '');
 
-        let found = null;
+        let foundIndex = -1;
 
         // 1) "카테고리+번호" 형식(맛08 / 맛 08 / 맛8 등)을 정확히 고정해서 매칭.
         //    카테고리 글자를 고정하지 않으면 다른 카테고리의 번호와
@@ -131,17 +131,22 @@
         const catMatch = cleanQuery.match(/^([결흥맛쉼])0*([0-9]+)$/);
         if (catMatch) {
             const targetOffNum = catMatch[1] + catMatch[2].padStart(2, '0');
-            found = places.find(p => p.off_num.replace(/\s+/g, '') === targetOffNum);
+            foundIndex = places.findIndex(p => p.off_num.replace(/\s+/g, '') === targetOffNum);
         }
 
         // 2) 번호 형식이 아니거나 매칭 실패 시 장소명으로 검색
-        if (!found) {
+        if (foundIndex === -1) {
             const lowerQuery = cleanQuery.toLowerCase();
-            found = places.find(p => p.name.replace(/\s+/g, '').toLowerCase().includes(lowerQuery));
+            foundIndex = places.findIndex(p => p.name.replace(/\s+/g, '').toLowerCase().includes(lowerQuery));
         }
 
-        if (found) { renderSidebar(found.id); }
-        else {
+        // ⚠️ renderSidebar는 places 배열 안에서의 "위치(인덱스)"를 받는 함수다.
+        // 장소의 id(원본 시트 행 번호)를 그대로 넘기면, 좌표 누락/중복 제거로
+        // 배열이 압축된 뒤에는 id와 실제 배열 위치가 어긋나 잘못된 자리를
+        // 읽어 'Cannot read properties of undefined' 오류가 났었다.
+        if (foundIndex !== -1) {
+            renderSidebar(foundIndex);
+        } else {
             console.debug('[검색 실패]', { query: rawInput, cleanQuery, catMatch, totalPlaces: places.length });
             alert('일치하는 장소를 찾지 못했어요!');
         }
