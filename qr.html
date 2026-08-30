@@ -26,7 +26,7 @@
         .qr-map-wrapper { width: 100%; height: 100dvh; position: relative; display: flex; flex-direction: column; }
         #map { width: 100%; height: 100%; z-index: 1; }
 
-        /* 💡 Leaflet 기본 하단 출처(OpenStreetMap 등) 완전히 숨기기 */
+        /* Leaflet 기본 하단 출처 숨기기 */
         .leaflet-control-attribution { display: none !important; }
 
         .qr-header { 
@@ -198,7 +198,7 @@
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // 💡 카테고리별 마커 색상 매핑 (결: 파랑, 흥: 노랑, 맛: 보라, 쉼: 초록)
+    // 카테고리별 마커 색상 매핑 (결: 파랑, 흥: 노랑, 맛: 보라, 쉼: 초록)
     function getMarkerColor(vibe) {
         switch(vibe) {
             case '결': return '#3A75C4';
@@ -220,13 +220,13 @@
     places.forEach((p, idx) => {
         const color = getMarkerColor(p.vibe);
 
-        // 커스텀 원형 컬러 마커 생성
-        const customIcon = L.divIcon={
+        // 💡 수정된 부분: L.divIcon 문법 정상 반영
+        const customIcon = L.divIcon({
             className: 'custom-pin',
             html: `<div style="background-color: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>`,
             iconSize: [14, 14],
             iconAnchor: [7, 7]
-        };
+        });
 
         const marker = L.marker([p.lat, p.lng], { icon: customIcon }).addTo(map);
 
