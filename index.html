@@ -190,11 +190,10 @@
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([37.0292, 128.2115], 14);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    const cartoApiKey = "eyJhbGciOiJIUzI1NiJ9.eyJhIjoiYWNfNDA4ZTUxdnYiLCJqdGkiOiJiNWRkODgwYyJ9.BVuet1prPj8jQLvq2CegtQv31n8YNTiJ-7iAJ4eqNkU"; 
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=' + cartoApiKey, {
-        maxZoom: 19,
-        subdomains: 'abcd'
+    // 💡 가장 깔끔했던 구글 로드맵 타일로 원상복구
+    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 18,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     }).addTo(map);
 
     setInterval(() => {
@@ -350,7 +349,7 @@
     }
 
     function toggleBottomSheet() {
-        document.getElementById('sidebar-box').classList.toggle('expanded');
+        document.getElementById('sidebar-box').classList.add('expanded');
     }
 
     function closeBottomSheet() {
