@@ -190,10 +190,11 @@
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([37.0292, 128.2115], 14);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // 💡 구글 로드맵 타일 적용 (에러 및 워터마크 없음)
-    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        maxZoom: 18,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+    // 💡 브이월드(V-World) 오픈 API 2D 일반 지도 타일 적용 (중괄호 이스케이프 완료)
+    L.tileLayer('https://api.vworld.kr/req/wmts/1.0.0/Base/{z}/{y}/{x}.png', {
+        maxZoom: 19,
+        minZoom: 6,
+        attribution: '&copy; V-World'
     }).addTo(map);
 
     setInterval(() => {
