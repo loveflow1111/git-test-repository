@@ -190,10 +190,10 @@
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([37.0292, 128.2115], 14);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // 💡 API 키 요구 없는 깨끗하고 세련된 라이트 타일(Jawg / OpenStreetMap 표준 프렌치 미러 서버) 적용
-    L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
-        maxZoom: 20,
-        subdomains: 'abc'
+    // 💡 Esri Light Gray Canvas 타일 적용 (워터마크 없음, 모던하고 깔끔한 회색/흰색 미니멀 지도)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 16,
+        attribution: 'Esri'
     }).addTo(map);
 
     setInterval(() => {
