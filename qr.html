@@ -190,10 +190,12 @@
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([37.0292, 128.2115], 14);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // 💡 Esri Light Gray Canvas 타일 적용 (워터마크 없음, 모던하고 깔끔한 회색/흰색 미니멀 지도)
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 16,
-        attribution: 'Esri'
+    // 💡 아래 'YOUR_API_KEY' 부분에 발급받으신 본인의 무료 CARTO API 키를 넣으시면 워터마크가 완전히 사라집니다!
+    const cartoApiKey = "eyJhbGciOiJIUzI1NiJ9.eyJhIjoiYWNfNDA4ZTUxdnYiLCJqdGkiOiJiNWRkODgwYyJ9.BVuet1prPj8jQLvq2CegtQv31n8YNTiJ-7iAJ4eqNkU"; 
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=' + cartoApiKey, {
+        maxZoom: 19,
+        subdomains: 'abcd'
     }).addTo(map);
 
     setInterval(() => {
