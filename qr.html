@@ -190,9 +190,10 @@
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([37.0292, 128.2115], 14);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // 💡 배경 지도를 선명하고 또렷한 OpenStreetMap 표준 타일로 교체
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
+    // 💡 원래 쓰던 깔끔하고 익숙한 구글 표준 로드맵 타일 복원
+    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 18,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     }).addTo(map);
 
     setInterval(() => {
