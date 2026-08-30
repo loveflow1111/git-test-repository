@@ -202,13 +202,15 @@
         if (event.key === 'Enter') { handleSearch(); }
     });
 
+    let currentSpeechPlace = null;
+
     function renderSidebar(index) {
         const p = places[index];
+        currentSpeechPlace = p;
         const sidebar = document.getElementById('sidebar-box');
         map.setView([p.lat, p.lng], 15, { animate: true });
         let storyInnerHtml = (p.special && p.special !== '정보 없음') ? `<div>${p.special}</div>` : '<span style="color:#888;">소개 데이터 준비 중입니다.</span>';
         let storyBox = `<div class="story-container"><div style="font-weight:800; color:var(--sage); margin-bottom:8px; font-size:0.95rem;">💬 이야기</div>${storyInnerHtml}</div>`;
-        let ttsText = `${p.name}. 주소는 ${p.address}. 운영시간은 ${p.time}, 휴무일은 ${p.holiday}입니다.`;
         sidebar.innerHTML = `
             <div class="sheet-header-bar"><div class="sheet-handle" onclick="toggleBottomSheet()"></div><button class="sheet-close-btn" onclick="closeBottomSheet()">✕</button></div>
             <div>
@@ -227,7 +229,7 @@
                 <div style="font-size:0.75rem; font-weight:bold; opacity:0.6; margin-top:14px; margin-bottom:6px;">🔗 로컬 커넥트</div>
                 <div>${p.links}</div>
                 ${storyBox}
-                <button class="tts-btn" onclick="speakText('${ttsText}')">🔊 상세 정보 및 이야기 음성으로 들려주기</button>
+                <button class="tts-btn" onclick="speakCurrentPlace()">🔊 상세 정보 및 이야기 음성으로 들려주기</button>
             </div>
         `;
         sidebar.scrollTop = 0;
@@ -236,6 +238,25 @@
 
     function toggleBottomSheet() { document.getElementById('sidebar-box').classList.toggle('expanded'); }
     function closeBottomSheet() { document.getElementById('sidebar-box').classList.remove('expanded'); }
+
+    // 팝업(바텀시트)에 표시된 정보를 전부 모아 하나의 문장으로 만들어 읽어준다.
+    // (기존에는 onclick 속성에 텍스트를 직접 끼워넣어서 이름/주소 정도까지만
+    //  안전했고, 그 이후 항목이나 따옴표가 섞인 '이야기' 내용을 넣으면 깨질
+    //  위험이 있었음 — 그래서 클릭 시점에 JS 변수에서 직접 문장을 조립하도록 변경)
+    function speakCurrentPlace() {
+        if (!currentSpeechPlace) return;
+        const p = currentSpeechPlace;
+        let parts = [];
+        parts.push(`${p.name}.`);
+        if (p.address && p.address !== '정보 없음') parts.push(`주소는 ${p.address}.`);
+        if (p.time && p.time !== '정보 없음') parts.push(`운영시간은 ${p.time}.`);
+        if (p.holiday && p.holiday !== '정보 없음') parts.push(`휴무일은 ${p.holiday}.`);
+        if (p.tel && p.tel !== '정보 없음') parts.push(`연락처는 ${p.tel}.`);
+        if (p.pre_contact && p.pre_contact !== '정보 없음') parts.push(`사전연락 유무는 ${p.pre_contact}.`);
+        if (p.special && p.special !== '정보 없음') parts.push(`이야기입니다. ${p.special}`);
+        speakText(parts.join(' '));
+    }
+
     function speakText(text) {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
