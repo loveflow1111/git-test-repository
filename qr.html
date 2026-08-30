@@ -53,7 +53,7 @@
         }
         .search-input {
             border: none; background: transparent; padding: 2px 4px; font-size: 0.68rem;
-            outline: none; width: 75px; font-family: 'Pretendard', sans-serif; color: var(--charcoal);
+            outline: none; width: 85px; font-family: 'Pretendard', sans-serif; color: var(--charcoal);
         }
         .search-btn {
             border: none; background: var(--sage); color: #FFF; padding: 3px 6px;
@@ -156,8 +156,9 @@
         <button class="nav-location-btn" onclick="moveSwallowTo('수산')">🌊 수산</button>
     </div>
 
+    <!-- 💡 검색창 예시 텍스트 수정 반영 -->
     <div class="search-bar">
-        <input type="text" id="searchInput" class="search-input" placeholder="결1, 맛01, 책방">
+        <input type="text" id="searchInput" class="search-input" placeholder="결 01, 맛 01, 책방">
         <button class="search-btn" onclick="handleSearch()">검색</button>
     </div>
 
@@ -198,13 +199,12 @@
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // 💡 시안 2: 세련된 카테고리별 컬러와 직관적인 심볼 아이콘 매핑
     function getCategoryStyle(vibe) {
         switch(vibe) {
-            case '결': return { color: '#2563EB', icon: '🧵' };  // 결 (블루)
-            case '흥': return { color: '#D97706', icon: '✨' };  // 흥 (골드오렌지)
-            case '맛': return { color: '#7C3AED', icon: '🍽️' };  // 맛 (퍼플)
-            case '쉼': return { color: '#16A34A', icon: '🌿' };  // 쉼 (그린)
+            case '결': return { color: '#2563EB', icon: '🧵' };
+            case '흥': return { color: '#D97706', icon: '✨' };
+            case '맛': return { color: '#7C3AED', icon: '🍽️' };
+            case '쉼': return { color: '#16A34A', icon: '🌿' };
             default: return { color: '#4B5563', icon: '📍' };
         }
     }
@@ -220,7 +220,6 @@
     places.forEach((p, idx) => {
         const style = getCategoryStyle(p.vibe);
 
-        // 💡 직관적인 심볼과 깔끔한 테두리가 돋보이는 모던 핀 디자인
         const customIcon = L.divIcon({
             className: 'modern-symbol-pin',
             html: `
