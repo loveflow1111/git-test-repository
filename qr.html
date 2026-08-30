@@ -190,10 +190,10 @@
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([37.0292, 128.2115], 14);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // 💡 Stadia Alidade Smooth 타일 적용 (API 키 불필요, 워터마크 없음, 세련된 모노톤 회색 배경)
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
-        maxZoom: 20,
-        attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>'
+    // 💡 가장 깔끔했던 구글 로드맵 타일로 원상복구
+    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 18,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     }).addTo(map);
 
     setInterval(() => {
@@ -349,7 +349,7 @@
     }
 
     function toggleBottomSheet() {
-        document.getElementById('sidebar-box').classList.toggle('expanded');
+        document.getElementById('sidebar-box').classList.add('expanded');
     }
 
     function closeBottomSheet() {
