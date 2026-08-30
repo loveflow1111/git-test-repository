@@ -141,7 +141,10 @@
         }
 
         if (found) { renderSidebar(found.id); }
-        else { alert('일치하는 장소를 찾지 못했어요!'); }
+        else {
+            console.debug('[검색 실패]', { query: rawInput, cleanQuery, catMatch, totalPlaces: places.length });
+            alert('일치하는 장소를 찾지 못했어요!');
+        }
     }
 
     document.getElementById('searchInput').addEventListener('keyup', function(event) {
