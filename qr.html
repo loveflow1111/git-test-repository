@@ -154,7 +154,7 @@
     </div>
 
     <div class="search-bar">
-        <input type="text" id="searchInput" class="search-input" placeholder="예) 결 1, 맛 01, 책방">
+        <input type="text" id="searchInput" class="search-input" placeholder="예) 결1, 맛01, 책방">
         <button class="search-btn" onclick="handleSearch()">검색</button>
     </div>
 
@@ -269,14 +269,25 @@
         const rawInput = document.getElementById('searchInput').value.trim();
         if (!rawInput) return;
 
+        // 사용자가 입력한 검색어를 정규화 (공백 제거, 소문자화)
         const cleanQuery = rawInput.replace(/\s+/g, '').toLowerCase();
 
-        const found = places.find(p => {
-            const cleanOffNum = p.off_num.replace(/\s+/g, '').toLowerCase();
-            const cleanName = p.name.replace(/\s+/g, '').toLowerCase();
+        // 1단계: 오프라인 번호(off_num)가 정확히 일치하는지 먼저 탐색 (예: "결1" -> "결01" 매칭 지원)
+        let found = places.find(p => {
+            let rawNum = p.off_num.replace(/\s+/g, '').toLowerCase(); // 예: "결01"
+            let paddedNum = rawNum.replace(/([가-힣])0?([0-9]+)/, (match, cat, num) => cat + num.padStart(2, '0')); // "결1" 형태로 변환
+            let unpaddedNum = rawNum.replace(/([가-힣])0+([0-9]+)/, '$1$2'); // "결1" 형태로 변환
 
-            return cleanOffNum.includes(cleanQuery) || cleanName.includes(cleanQuery);
+            return cleanQuery === rawNum || cleanQuery === paddedNum || cleanQuery === unpaddedNum;
         });
+
+        // 2단계: 정확한 번호 매칭이 없다면 장소 이름(name)에 포함되는지 탐색
+        if (!found) {
+            found = places.find(p => {
+                const cleanName = p.name.replace(/\s+/g, '').toLowerCase();
+                return cleanName.includes(cleanQuery);
+            });
+        }
 
         if (found) {
             renderSidebar(found.id);
