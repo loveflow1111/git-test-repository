@@ -198,14 +198,14 @@
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // 💡 카테고리별 컬러 및 대표 이모지 아이콘 매핑
+    // 💡 구글맵 스타일의 전형적인 핀(물방울 드롭) 형태 및 카테고리별 컬러 매핑
     function getCategoryStyle(vibe) {
         switch(vibe) {
-            case '결': return { color: '#3A75C4', emoji: '🧵' };  // 결 (관계/삶의 결)
-            case '흥': return { color: '#E6C547', emoji: '✨' };  // 흥 (흥겨움/체험)
-            case '맛': return { color: '#8B5CF6', emoji: '🍽️' };  // 맛 (음식/카페)
-            case '쉼': return { color: '#22C55E', emoji: '🌿' };  // 쉼 (자연/휴식)
-            default: return { color: '#888888', emoji: '📍' };
+            case '결': return { color: '#3A75C4', label: '결' };
+            case '흥': return { color: '#D97706', label: '흥' };
+            case '맛': return { color: '#8B5CF6', label: '맛' };
+            case '쉼': return { color: '#16A34A', label: '쉼' };
+            default: return { color: '#6B7280', label: '점' };
         }
     }
 
@@ -220,21 +220,34 @@
     places.forEach((p, idx) => {
         const style = getCategoryStyle(p.vibe);
 
-        // 💡 밋밋한 동그라미 대신 가시성 높은 이모지 뱃지 핀 형태로 생성
+        // 구글맵 마커 핀 형태 (물방울 드롭 스타일 + 글자/이니셜)
         const customIcon = L.divIcon({
-            className: 'custom-emoji-pin',
-            html: `<div style="
-                background-color: ${style.color}; 
-                width: 28px; height: 28px; 
-                border-radius: 50%; 
-                border: 2px solid #FFFFFF; 
-                box-shadow: 0 3px 8px rgba(0,0,0,0.35); 
-                display: flex; align-items: center; justify-content: center; 
-                font-size: 13px;
-                transition: transform 0.2s;
-            ">${style.emoji}</div>`,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14]
+            className: 'google-style-pin',
+            html: `
+                <div style="
+                    background-color: ${style.color};
+                    width: 26px;
+                    height: 34px;
+                    border-radius: 50% 50% 50% 0;
+                    transform: rotate(-45deg);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                    border: 2px solid #FFFFFF;
+                ">
+                    <span style="
+                        transform: rotate(45deg);
+                        color: #FFFFFF;
+                        font-weight: 800;
+                        font-size: 11px;
+                        font-family: 'Pretendard', sans-serif;
+                    ">${style.label}</span>
+                </div>
+            `,
+            iconSize: [26, 34],
+            iconAnchor: [13, 34],
+            popupAnchor: [0, -34]
         });
 
         const marker = L.marker([p.lat, p.lng], { icon: customIcon }).addTo(map);
