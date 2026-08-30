@@ -198,14 +198,14 @@
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // 카테고리별 마커 색상 매핑 (결: 파랑, 흥: 노랑, 맛: 보라, 쉼: 초록)
-    function getMarkerColor(vibe) {
+    // 💡 카테고리별 컬러 및 대표 이모지 아이콘 매핑
+    function getCategoryStyle(vibe) {
         switch(vibe) {
-            case '결': return '#3A75C4';
-            case '흥': return '#E6C547';
-            case '맛': return '#8B5CF6';
-            case '쉼': return '#22C55E';
-            default: return '#888888';
+            case '결': return { color: '#3A75C4', emoji: '🧵' };  // 결 (관계/삶의 결)
+            case '흥': return { color: '#E6C547', emoji: '✨' };  // 흥 (흥겨움/체험)
+            case '맛': return { color: '#8B5CF6', emoji: '🍽️' };  // 맛 (음식/카페)
+            case '쉼': return { color: '#22C55E', emoji: '🌿' };  // 쉼 (자연/휴식)
+            default: return { color: '#888888', emoji: '📍' };
         }
     }
 
@@ -218,14 +218,23 @@
     }
 
     places.forEach((p, idx) => {
-        const color = getMarkerColor(p.vibe);
+        const style = getCategoryStyle(p.vibe);
 
-        // 💡 수정된 부분: L.divIcon 문법 정상 반영
+        // 💡 밋밋한 동그라미 대신 가시성 높은 이모지 뱃지 핀 형태로 생성
         const customIcon = L.divIcon({
-            className: 'custom-pin',
-            html: `<div style="background-color: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>`,
-            iconSize: [14, 14],
-            iconAnchor: [7, 7]
+            className: 'custom-emoji-pin',
+            html: `<div style="
+                background-color: ${style.color}; 
+                width: 28px; height: 28px; 
+                border-radius: 50%; 
+                border: 2px solid #FFFFFF; 
+                box-shadow: 0 3px 8px rgba(0,0,0,0.35); 
+                display: flex; align-items: center; justify-content: center; 
+                font-size: 13px;
+                transition: transform 0.2s;
+            ">${style.emoji}</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
         });
 
         const marker = L.marker([p.lat, p.lng], { icon: customIcon }).addTo(map);
