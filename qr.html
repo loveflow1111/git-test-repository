@@ -53,7 +53,6 @@
         .swallow-avatar { width: 22px; height: 22px; border-radius: 50%; background: #EBF2EE; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; border: 1px solid var(--sage); }
         .nav-location-btn { background: var(--warm-cream); color: var(--charcoal); border: 1px solid var(--border-color); padding: 3px 6px; border-radius: 10px; font-size: 0.65rem; font-weight: 700; cursor: pointer; }
 
-        /* 💡 검색 바 배경을 순백색(rgba(255, 255, 255, 0.95))으로 변경 */
         .search-bar {
             position: absolute; top: 58px; left: 198px; z-index: 1000;
             display: flex; gap: 3px; background: rgba(255, 255, 255, 0.95); padding: 4px 6px;
@@ -191,9 +190,9 @@
     const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([37.0292, 128.2115], 14);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        maxZoom: 18,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+    // 💡 배경 지도를 선명하고 또렷한 OpenStreetMap 표준 타일로 교체
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
     }).addTo(map);
 
     setInterval(() => {
