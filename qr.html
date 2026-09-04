@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>덕산·수산 로컬 상세 지도</title>
+
+    <!-- 📌 카카오톡/문자 등으로 링크 공유 시 미리보기(제목·설명·썸네일)를 위한 태그.
+         og:image의 URL은 실제 배포 주소로 꼭 바꿔주세요.
+         (예: https://내깃헙아이디.github.io/저장소이름/cover.jpg)
+         표지 일러스트 이미지를 index.html과 같은 폴더에 cover.jpg로 올려두고
+         아래 주소만 본인 깃헙 페이지 주소에 맞게 수정하면 됩니다. -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="🍃 덕산·수산 로컬 지도">
+    <meta property="og:description" content="충북 제천 덕산·수산 마을의 결·흥·맛·쉼 로컬 지도 — 결·흥·맛·쉼, 마을 곳곳의 이야기를 만나보세요.">
+    <meta property="og:image" content="https://예시주소.github.io/저장소이름/cover.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="🍃 덕산·수산 로컬 지도">
+    <meta name="twitter:description" content="충북 제천 덕산·수산 마을의 결·흥·맛·쉼 로컬 지도">
+    <meta name="twitter:image" content="https://예시주소.github.io/저장소이름/cover.jpg">
+
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -29,6 +44,8 @@
         .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,0.1); }
         .dot-all { background: #888; } .dot-결 { background: #3A75C4; } .dot-흥 { background: #E6C547; } .dot-맛 { background: #8B5CF6; } .dot-쉼 { background: #22C55E; }
         .map-bottom-copyright { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 999; background: rgba(245, 240, 235, 0.92); backdrop-filter: blur(6px); padding: 5px 16px; border-radius: 12px; border: 1px solid rgba(197, 160, 89, 0.6); font-size: 0.68rem; font-weight: 700; color: #575048; white-space: nowrap; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .share-fab { position: absolute; bottom: 100px; right: 12px; z-index: 1000; width: 46px; height: 46px; border-radius: 50%; background: var(--sage); color: #FFF; border: 2px solid #FFF; box-shadow: 0 4px 14px rgba(0,0,0,0.28); font-size: 1.25rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .share-fab:active { transform: scale(0.94); }
         .region-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1500; background: rgba(45, 64, 48, 0.88); color: #FFF; padding: 10px 24px; border-radius: 22px; font-family: 'Nanum Myeongjo', serif; font-weight: 800; font-size: 1.15rem; letter-spacing: 1px; pointer-events: none; opacity: 0; transition: opacity 0.35s ease; box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
         .region-label.show { opacity: 1; }
         #sidebar-box { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 75vh; background: var(--warm-cream); border-top-left-radius: 28px; border-top-right-radius: 28px; border-top: 2px solid var(--soft-gold); box-shadow: 0 -10px 35px rgba(0,0,0,0.25); transform: translateY(100%); z-index: 2000; padding: 14px 20px 30px 20px; overflow-y: auto; transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1); }
@@ -71,6 +88,7 @@
     </div>
     <div id="map"></div>
     <div id="region-label" class="region-label"></div>
+    <button class="share-fab" onclick="shareMap()" title="지도 공유하기">🔗</button>
     <div class="map-bottom-copyright">Copyright 2026. Kim Minju. All rights reserved.</div>
     <div id="sidebar-box">
         <div class="sheet-header-bar"><div class="sheet-handle" onclick="toggleBottomSheet()"></div><button class="sheet-close-btn" onclick="closeBottomSheet()">✕</button></div>
@@ -264,6 +282,40 @@
             utterance.lang = 'ko-KR';
             utterance.rate = 0.95;
             window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    // 공유 버튼: 카카오 API 키 없이도 되는 방식.
+    // 모바일에서는 기기 자체 공유창(Web Share API)이 열려서 카카오톡·문자 등
+    // 설치된 앱이 자동으로 뜨고, 지원 안 되는 환경(대부분 데스크톱)에서는
+    // 링크를 클립보드에 복사해준다.
+    function shareMap() {
+        try {
+            // 로컬 파일(file://)로 직접 열었을 때는 공유/클립보드 API가
+            // 보안 정책상 정상 동작하지 않아 에러를 던질 수 있다.
+            // 실제 배포 주소(https://...)가 아니면 안내만 하고 끝낸다.
+            if (window.location.protocol === 'file:') {
+                alert('로컬 파일에서는 공유 기능을 테스트할 수 없어요.\n실제 배포된 주소(https://...)에서 확인해주세요.');
+                return;
+            }
+            const shareData = {
+                title: '🍃 덕산·수산 로컬 지도',
+                text: '충북 제천 덕산·수산 마을의 결·흥·맛·쉼 로컬 지도를 확인해보세요!',
+                url: window.location.href
+            };
+            if (navigator.share) {
+                navigator.share(shareData).catch(() => {});
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    alert('링크가 복사됐어요! 카카오톡이나 문자에 붙여넣어 공유해보세요.');
+                }).catch(() => {
+                    alert('공유 링크: ' + window.location.href);
+                });
+            } else {
+                alert('공유 링크: ' + window.location.href);
+            }
+        } catch (err) {
+            alert('공유 기능을 사용할 수 없어요. 실제 배포된 주소에서 다시 시도해주세요.');
         }
     }
 </script>
