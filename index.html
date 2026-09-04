@@ -321,21 +321,25 @@
                 alert('로컬 파일에서는 공유 기능을 테스트할 수 없어요.\n실제 배포된 주소(https://...)에서 확인해주세요.');
                 return;
             }
+            // 카카오톡 등은 한 번 스캔한 링크의 미리보기(썸네일)를 캐싱해두고
+            // 한동안 새로 안 긁어온다. 매번 링크 끝에 캐시무효화용 쿼리스트링을
+            // 붙여서 "새 링크"로 인식하게 만들어, 최신 썸네일이 항상 뜨도록 한다.
+            const shareUrl = window.location.origin + window.location.pathname + '?v=' + Date.now();
             const shareData = {
                 title: '🍃 덕산·수산 로컬 지도',
                 text: '충북 제천 덕산·수산 마을의 결·흥·맛·쉼 로컬 지도를 확인해보세요!',
-                url: window.location.href
+                url: shareUrl
             };
             if (navigator.share) {
                 navigator.share(shareData).catch(() => {});
             } else if (navigator.clipboard) {
-                navigator.clipboard.writeText(window.location.href).then(() => {
+                navigator.clipboard.writeText(shareUrl).then(() => {
                     alert('링크가 복사됐어요! 카카오톡이나 문자에 붙여넣어 공유해보세요.');
                 }).catch(() => {
-                    alert('공유 링크: ' + window.location.href);
+                    alert('공유 링크: ' + shareUrl);
                 });
             } else {
-                alert('공유 링크: ' + window.location.href);
+                alert('공유 링크: ' + shareUrl);
             }
         } catch (err) {
             alert('공유 기능을 사용할 수 없어요. 실제 배포된 주소에서 다시 시도해주세요.');
